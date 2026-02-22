@@ -20,6 +20,18 @@ uv run <script>
 
 # Sync dependencies
 uv sync
+
+# Lint (full output — shows source context for self-correction)
+uv run ruff check --output-format full .
+
+# Lint and auto-fix
+uv run ruff check --fix .
+
+# Format
+uv run ruff format .
+
+# Check formatting without modifying
+uv run ruff format --check .
 ```
 
 ## Project Structure
