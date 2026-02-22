@@ -64,5 +64,16 @@ https://github.com/dynamous-community/agentic-coding-course/blob/main/module_5/w
 - Blocks commits if lint errors or formatting issues are found
 - Verified hook passes on current codebase
 
+### 8. Add mypy
+- `uv add --dev mypy`
+- Added `[tool.mypy]` config to `pyproject.toml`:
+  - `python_version = "3.12"`
+  - `strict = true`
+  - `show_error_codes = true`
+  - `disallow_untyped_defs = true`
+  - `disallow_incomplete_defs = true`
+  - `check_untyped_defs = true`
+- Run with: `uv run mypy .`
+
 ## TODO
-- Review `external_docs/ai-coding-project-setup-guide.md` — check if anything else needs to be added to Ruff config
+- Review `external_docs/ai-coding-project-setup-guide.md` — check if anything else needs to be added to config
