@@ -22,6 +22,8 @@ select = [
     "F",   # Pyflakes
     "I",   # isort
     "B",   # flake8-bugbear
+    "S",   # flake8-bandit (security)
+    "ANN", # flake8-annotations (type hints)
     "UP",  # pyupgrade
     "N",   # pep8-naming
     "A",   # flake8-builtins
@@ -29,7 +31,14 @@ select = [
     "SIM", # flake8-simplify
     "RUF", # Ruff-specific rules
 ]
+ignore = [
+    "S311", # Standard random is fine for non-crypto
+]
 fixable = ["ALL"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "ANN"]
+"__init__.py" = ["F401"]
 
 [tool.ruff.format]
 # Full output gives AI the source-code context needed for self-correction

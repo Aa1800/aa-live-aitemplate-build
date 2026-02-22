@@ -3,18 +3,18 @@ import os
 import sys
 
 
-def greet(name):
+def greet(name: str) -> str:
     msg = "Hello, " + name + "!"
     return msg
 
 
-def load_config(path):
+def load_config(path: str) -> dict:
     with open(path) as f:
         data = json.load(f)
     return data
 
 
-def main():
+def main() -> None:
     name = os.environ.get("USER", "world")
     greeting = greet(name)
     print(greeting)
