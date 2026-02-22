@@ -64,15 +64,16 @@ https://github.com/dynamous-community/agentic-coding-course/blob/main/module_5/w
 - Blocks commits if lint errors or formatting issues are found
 - Verified hook passes on current codebase
 
-### 8. Add mypy
+### 8. Add mypy (expanded from official docs)
 - `uv add --dev mypy`
-- Added `[tool.mypy]` config to `pyproject.toml`:
-  - `python_version = "3.12"`
-  - `strict = true`
-  - `show_error_codes = true`
-  - `disallow_untyped_defs = true`
-  - `disallow_incomplete_defs = true`
-  - `check_untyped_defs = true`
+- Configured `[tool.mypy]` in `pyproject.toml` based on official config docs:
+  - `strict = true` — enables all 13 optional checks in one flag
+  - `warn_unreachable`, `strict_bytes` — additional strictness
+  - AI-optimised output: `show_error_context`, `show_error_codes`, `show_error_code_links`, `show_column_numbers`, `pretty`
+  - `[[tool.mypy.overrides]]` relaxes strictness for `tests.*`
+- `main.py` rewritten to exercise 10 rule categories (generics, Optional, decorators, Protocol, strict_bytes, etc.)
+- Gotcha: `** 0.5` returns `Any` under strict — use `math.sqrt()` instead
+- Gotcha: Python 3.12 type param syntax (`def f[F: Callable]`) required by `UP047`
 - Run with: `uv run mypy .`
 
 ## TODO
