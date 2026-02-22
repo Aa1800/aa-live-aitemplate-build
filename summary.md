@@ -57,6 +57,12 @@ https://github.com/dynamous-community/agentic-coding-course/blob/main/module_5/w
 - `uv run ruff format --check main.py` — check formatting without modifying
 - Caught and fixed 3 issues: `I001` (import order), `UP015` (unnecessary open mode), `E711` (None comparison)
 
+### 7. Set Up Pre-commit Hook
+- Created `.git/hooks/pre-commit` (not tracked by git, lives in `.git/`)
+- Made executable with `chmod +x`
+- Runs on every commit: `uv run ruff check . && uv run ruff format --check .`
+- Blocks commits if lint errors or formatting issues are found
+- Verified hook passes on current codebase
+
 ## TODO
-- Set up pre-commit hook: `uv run ruff check . && uv run ruff format --check .`
 - Review `external_docs/ai-coding-project-setup-guide.md` — check if anything else needs to be added to Ruff config
