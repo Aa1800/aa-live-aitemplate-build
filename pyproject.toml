@@ -9,6 +9,7 @@ dependencies = []
 [dependency-groups]
 dev = [
     "mypy>=1.19.1",
+    "pyright>=1.1.408",
     "ruff>=0.15.2",
 ]
 
@@ -84,6 +85,47 @@ module = "tests.*"
 # Tests use assert statements and may have looser typing
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+
+[tool.pyright]
+# Scan the project root (update to ["app"] or ["src"] when source layout is adopted)
+include = ["."]
+exclude = ["**/__pycache__", ".venv", ".mypy_cache", ".firecrawl"]
+
+pythonVersion = "3.12"
+pythonPlatform = "Darwin"
+
+# --- Strictness ---
+# "strict" enables all rules in the strict column of the diagnostics table.
+# Covers: reportUnknownXxx, reportMissingXxx, reportUnusedXxx, reportOptionalXxx,
+#         reportUntypedXxx, reportConstantRedefinition, reportMatchNotExhaustive, etc.
+typeCheckingMode = "strict"
+
+# Strict type inference for collection literals — no implicit Any in list/dict/set
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+
+# Treat bytearray/memoryview as distinct from bytes (mirrors mypy strict_bytes)
+disableBytesTypePromotions = true
+
+# --- Rules redundant under strict but listed for documentation clarity ---
+reportMissingImports = "error"
+reportUnusedImport = "error"
+reportUnusedVariable = "error"
+reportOptionalMemberAccess = "error"
+reportUnknownParameterType = "error"
+reportUnknownArgumentType = "error"
+reportUnknownVariableType = "error"
+
+# --- Extra rules not enabled even in strict mode (opt-in) ---
+# Flag dead/unreachable code (mirrors mypy warn_unreachable)
+reportUnreachable = "error"
+# Flag circular imports
+reportImportCycles = "warning"
+# Flag uninitialized instance variables in __init__
+reportUninitializedInstanceVariable = "warning"
+# Flag unnecessary type: ignore comments (keep suppression list clean)
+reportUnnecessaryTypeIgnoreComment = "warning"
 
 [tool.ruff.format]
 # Full output gives AI the source-code context needed for self-correction
