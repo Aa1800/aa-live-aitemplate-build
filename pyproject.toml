@@ -45,6 +45,7 @@ fixable = ["ALL"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["S101", "ANN"]
+"app/**/tests/**/*.py" = ["S101", "ANN"]
 "__init__.py" = ["F401"]
 
 [tool.mypy]
@@ -91,6 +92,11 @@ module = "tests.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 
+[[tool.mypy.overrides]]
+module = "app.core.tests.*"
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
 [tool.pyright]
 # Scan the project root (update to ["app"] or ["src"] when source layout is adopted)
 include = ["."]
@@ -133,7 +139,7 @@ reportUninitializedInstanceVariable = "warning"
 reportUnnecessaryTypeIgnoreComment = "warning"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "app"]
 # auto mode: async tests run without @pytest.mark.asyncio decorator
 asyncio_mode = "auto"
 # Explicit scopes to avoid future deprecation warnings
