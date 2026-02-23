@@ -161,6 +161,16 @@ def from_bytearray(buf: bytearray) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Async function — demonstrates pytest-asyncio pattern
+# ---------------------------------------------------------------------------
+
+
+async def async_add(x: int, y: int) -> int:
+    """Async version of add, used to demonstrate pytest-asyncio."""
+    return x + y
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 

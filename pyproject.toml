@@ -10,6 +10,9 @@ dependencies = []
 dev = [
     "mypy>=1.19.1",
     "pyright>=1.1.408",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+    "pytest-cov>=7.0.0",
     "ruff>=0.15.2",
 ]
 
@@ -126,6 +129,22 @@ reportImportCycles = "warning"
 reportUninitializedInstanceVariable = "warning"
 # Flag unnecessary type: ignore comments (keep suppression list clean)
 reportUnnecessaryTypeIgnoreComment = "warning"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# auto mode: async tests run without @pytest.mark.asyncio decorator
+asyncio_mode = "auto"
+# Explicit scopes to avoid future deprecation warnings
+asyncio_default_fixture_loop_scope = "function"
+asyncio_default_test_loop_scope = "function"
+addopts = "--tb=short -v --cov --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["."]
+omit = ["tests/*", ".venv/*", ".firecrawl/*"]
+
+[tool.coverage.report]
+show_missing = true
 
 [tool.ruff.format]
 # Full output gives AI the source-code context needed for self-correction

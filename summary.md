@@ -76,5 +76,16 @@ https://github.com/dynamous-community/agentic-coding-course/blob/main/module_5/w
 - Gotcha: Python 3.12 type param syntax (`def f[F: Callable]`) required by `UP047`
 - Run with: `uv run mypy .`
 
+### 9. Add Pyright (second type checking layer)
+- `uv add --dev pyright`
+- Configured `[tool.pyright]` in `pyproject.toml` based on official docs:
+  - `typeCheckingMode = "strict"` — enables full strict rule set
+  - `strictListInference`, `strictDictionaryInference`, `strictSetInference` — no implicit `Any` in collection literals
+  - `disableBytesTypePromotions = true` — mirrors mypy's `strict_bytes`
+  - Opt-in extras (not on even in strict): `reportUnreachable`, `reportImportCycles`, `reportUninitializedInstanceVariable`, `reportUnnecessaryTypeIgnoreComment`
+- Both mypy and pyright pass clean on `main.py` (0 errors each)
+- Run with: `uv run pyright`
+- Pyright advantage over mypy: better narrowing, strict collection inference, `reportMatchNotExhaustive`, `reportImportCycles`
+
 ## TODO
 - Review `external_docs/ai-coding-project-setup-guide.md` — check if anything else needs to be added to config
