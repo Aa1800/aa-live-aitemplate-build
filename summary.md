@@ -87,5 +87,21 @@ https://github.com/dynamous-community/agentic-coding-course/blob/main/module_5/w
 - Run with: `uv run pyright`
 - Pyright advantage over mypy: better narrowing, strict collection inference, `reportMatchNotExhaustive`, `reportImportCycles`
 
+### 10. Add pytest, pytest-asyncio, pytest-cov
+- `uv add --dev pytest pytest-asyncio pytest-cov`
+- Configured `[tool.pytest.ini_options]` in `pyproject.toml`:
+  - `asyncio_mode = "auto"` — no `@pytest.mark.asyncio` decorator needed
+  - `asyncio_default_fixture_loop_scope = "function"` — explicit to avoid deprecation warnings
+  - `addopts = "--tb=short -v --cov --cov-report=term-missing"` — coverage on every run
+- Added `[tool.coverage.run]` and `[tool.coverage.report]` sections
+- Added `async_add()` to `main.py` to demonstrate pytest-asyncio pattern
+- Created `tests/__init__.py` and `tests/test_main.py` with 24 tests:
+  - 20 sync unit tests covering all public functions
+  - 3 async tests (`test_async_add*`) using auto mode (no decorator)
+  - 1 async fixture test (`test_async_fixture`)
+- Updated `.gitignore` with `.pytest_cache`, `.mypy_cache`, `htmlcov`, `.coverage`
+- Gotcha: `pytest.approx` has partially-unknown stubs under pyright strict — use `math.isclose` instead
+- Run with: `uv run pytest`
+
 ## TODO
 - Review `external_docs/ai-coding-project-setup-guide.md` — check if anything else needs to be added to config
