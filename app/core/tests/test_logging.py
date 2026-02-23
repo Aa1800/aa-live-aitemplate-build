@@ -4,11 +4,26 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Generator
 
 import pytest
 import structlog
 
-from app.core.logging import get_logger, get_request_id, set_request_id, setup_logging
+from app.core.logging import (
+    get_logger,
+    get_request_id,
+    request_id_var,
+    set_request_id,
+    setup_logging,
+)
+
+
+@pytest.fixture(autouse=True)
+def reset_request_id() -> Generator[None, None, None]:
+    """Reset request_id ContextVar to default before and after each test."""
+    token = request_id_var.set("")
+    yield
+    request_id_var.reset(token)
 
 
 def test_setup_logging_does_not_raise() -> None:
@@ -40,6 +55,12 @@ def test_get_request_id_returns_set_value() -> None:
 def test_get_logger_returns_bound_logger() -> None:
     setup_logging()
     logger = get_logger("test")
+    assert isinstance(logger, structlog.stdlib.BoundLogger)
+
+
+def test_get_logger_without_name_returns_bound_logger() -> None:
+    setup_logging()
+    logger = get_logger()
     assert isinstance(logger, structlog.stdlib.BoundLogger)
 
 
