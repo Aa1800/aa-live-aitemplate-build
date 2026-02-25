@@ -163,6 +163,42 @@ https://github.com/dynamous-community/agentic-coding-course/blob/main/module_5/w
 - Container runs and produces structured JSON logs as expected
 - Gotcha: `--no-editable` requires a `[build-system]` in pyproject.toml to build a wheel; omitted since project has none — re-enable when FastAPI/hatchling is added
 
+### 14. Add FastAPI with Pydantic Settings and Request Logging Middleware
+- Reference: `.claude/external_docs/vertical-slice-architecture-setup-guide.md` + `https://fastapi.tiangolo.com/advanced/events/`
+- Installed: `fastapi`, `uvicorn[standard]`, `pydantic-settings`, `python-dotenv` (prod); `httpx` (dev)
+- Created `app/core/config.py`:
+  - `Settings(BaseSettings)` with fields: `app_name`, `version`, `environment`, `log_level`, `api_prefix`, `allowed_origins`
+  - `_CommaFallbackEnvSource(EnvSettingsSource)` — overrides `decode_complex_value` to fall back to comma-split for list fields (pydantic-settings v2 requires JSON for list types by default; this enables `ALLOWED_ORIGINS=a.com,b.com`)
+  - `settings_customise_sources` classmethod swaps in the custom source
+  - `@lru_cache get_settings()` — cached singleton
+- Created `app/core/middleware.py`:
+  - `RequestLoggingMiddleware(BaseHTTPMiddleware)` — sets request_id from `X-Request-ID` header or generates UUID4, logs `request.started` / `request.completed` / `request.failed`, adds `X-Request-ID` to response headers
+  - `setup_middleware(app)` — adds `RequestLoggingMiddleware` + `CORSMiddleware` with `settings.allowed_origins`
+- Rewrote `app/main.py` as FastAPI application:
+  - `@asynccontextmanager lifespan(app)` — calls `setup_logging()`, logs `application.startup` / `application.shutdown`
+  - `FastAPI(title=..., version=..., lifespan=lifespan)` with `setup_middleware(app)` at module level
+  - `GET /` root endpoint returns `message`, `version`, `docs`
+  - `if __name__ == "__main__":` runs uvicorn on port 8123
+- Created `.env.example` with commented application settings
+- Updated `pyproject.toml`:
+  - `name = "vsa-fastapi-project"`, updated description
+  - `[tool.ruff.lint.isort] known-first-party = ["app"]`
+  - New `[[tool.mypy.overrides]]` for `app.tests.*`
+  - `reportUnusedFunction = "none"` — suppresses pyright false positives for FastAPI route handlers in test fixtures
+- Created test files:
+  - `app/core/tests/test_config.py` — 6 tests (defaults, env vars, caching, CORS parsing)
+  - `app/core/tests/test_middleware.py` — 5 tests (request-ID generation, header passthrough, log event mocking, CORS OPTIONS)
+  - `app/tests/test_main.py` — 4 tests (root endpoint structure, /docs, /openapi.json, CORS headers)
+  - `app/tests/__init__.py` — new package
+- Gotchas:
+  - `@field_validator` with `mode="before"` does NOT intercept pydantic-settings env parsing (source parses first) — must override `decode_complex_value` in `EnvSettingsSource` subclass
+  - Module-level logger (`get_logger().bind()`) binds to the logger factory at import time — calling `setup_logging()` in a test does not update it; use `patch("app.core.middleware.logger")` to mock
+  - `capsys` captures structlog output only if `setup_logging()` was called after capsys fixture replaced `sys.stdout` — but module-level loggers bypass this; mock instead
+  - `reportUnusedFunction` pyright strict false positive for `@app.get()`-decorated inner functions in test fixtures
+- Run: `uv run uvicorn app.main:app --reload --port 8123`
+- 48 total tests passing (24 root + 9 logging + 6 config + 5 middleware + 4 main); ruff, mypy, pyright all clean
+- Coverage: 92% overall
+
 ## TODO
 ## Personal TODO
 - something to include later, first do PRD, then finalize the architecture and tech stack and then setup the project template

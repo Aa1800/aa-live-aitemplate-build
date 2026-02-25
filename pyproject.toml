@@ -1,15 +1,20 @@
 [project]
-name = "aa-live-aitemplate-build"
+name = "vsa-fastapi-project"
 version = "0.1.0"
-description = "Add your description here"
+description = "FastAPI + PostgreSQL starter with vertical slice architecture, optimized for AI coding"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "fastapi>=0.133.0",
+    "pydantic-settings>=2.13.1",
+    "python-dotenv>=1.2.1",
     "structlog>=25.5.0",
+    "uvicorn[standard]>=0.41.0",
 ]
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
     "mypy>=1.19.1",
     "pyright>=1.1.408",
     "pytest>=9.0.2",
@@ -42,6 +47,9 @@ ignore = [
     "S311", # Standard random is fine for non-crypto
 ]
 fixable = ["ALL"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["S101", "ANN"]
@@ -97,6 +105,11 @@ module = "app.core.tests.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 
+[[tool.mypy.overrides]]
+module = "app.tests.*"
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
 [tool.pyright]
 # Scan the project root (update to ["app"] or ["src"] when source layout is adopted)
 include = ["."]
@@ -127,6 +140,10 @@ reportOptionalMemberAccess = "error"
 reportUnknownParameterType = "error"
 reportUnknownArgumentType = "error"
 reportUnknownVariableType = "error"
+
+# reportUnusedFunction generates false positives for FastAPI route handlers
+# registered via @app.get() decorators (the decorator "uses" the function).
+reportUnusedFunction = "none"
 
 # --- Extra rules not enabled even in strict mode (opt-in) ---
 # Flag dead/unreachable code (mirrors mypy warn_unreachable)

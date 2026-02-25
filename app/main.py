@@ -1,56 +1,51 @@
-"""Demo: structured logging usage patterns.
+"""FastAPI application entry point.
 
-Demonstrates the hybrid dotted namespace event convention:
-    {domain}.{component}.{action}_{state}
-
-Run with: uv run python -m app.main
+Run with: uv run uvicorn app.main:app --reload --port 8123
 """
 
 from __future__ import annotations
 
-from app.core.logging import get_logger, set_request_id, setup_logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
+import uvicorn
+from fastapi import FastAPI
+
+from app.core.config import get_settings
+from app.core.logging import get_logger, setup_logging
+from app.core.middleware import setup_middleware
+
+settings = get_settings()
 
 
-def simulate_registration(email: str) -> None:
-    """Show the hybrid dotted namespace pattern for a user registration flow."""
-    logger = get_logger("app.users")
-
-    logger.info("user.registration_started", email=email, source="api")
-
-    if "@" not in email:
-        logger.warning(
-            "user.registration_rejected", email=email, reason="invalid_email"
-        )
-        return
-
-    user_id = "usr_abc123"
-    logger.info("user.registration_completed", user_id=user_id, email=email)
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Configure logging and announce startup/shutdown."""
+    setup_logging(log_level=settings.log_level)
+    logger = get_logger("app.main")
+    logger.info("application.startup", environment=settings.environment)
+    yield
+    logger.info("application.shutdown")
 
 
-def simulate_db_init() -> None:
-    """Show infrastructure-level logging."""
-    logger = get_logger("app.database")
-    logger.info("database.connection_initialized", host="localhost", port=5432)
+app = FastAPI(
+    title=settings.app_name,
+    version=settings.version,
+    lifespan=lifespan,
+)
+
+setup_middleware(app)
 
 
-def simulate_failure() -> None:
-    """Show exception logging with a full stack trace in JSON output."""
-    logger = get_logger("app.tasks")
-    try:
-        raise RuntimeError("upstream timeout")
-    except RuntimeError:
-        logger.exception("task.processing_failed", task="send_email")
-
-
-def main() -> None:
-    setup_logging(log_level="INFO")
-    set_request_id("demo-request-001")
-
-    simulate_db_init()
-    simulate_registration("alice@example.com")
-    simulate_registration("not-an-email")
-    simulate_failure()
+@app.get("/")
+def root() -> dict[str, str]:
+    """Root endpoint — confirms the API is running."""
+    return {
+        "message": settings.app_name,
+        "version": settings.version,
+        "docs": "/docs",
+    }
 
 
 if __name__ == "__main__":
-    main()
+    uvicorn.run("app.main:app", host="127.0.0.1", port=8123, reload=True)
