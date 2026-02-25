@@ -103,5 +103,67 @@ https://github.com/dynamous-community/agentic-coding-course/blob/main/module_5/w
 - Gotcha: `pytest.approx` has partially-unknown stubs under pyright strict — use `math.isclose` instead
 - Run with: `uv run pytest`
 
+### 11. Add Structured Logging with structlog
+- `uv add structlog` (structlog 25.5.0, production dependency)
+- Created `app/` package layout: `app/__init__.py`, `app/core/__init__.py`, `app/core/tests/__init__.py`
+- Created `app/core/logging.py` with:
+  - `request_id_var: ContextVar[str]` — module-level context variable for request correlation
+  - `set_request_id(request_id=None) -> str` — stores UUID4 (or supplied value) in ContextVar
+  - `get_request_id() -> str` — reads from ContextVar
+  - `setup_logging(log_level="INFO") -> None` — configures structlog globally with processor chain:
+    - `_add_request_id` — injects request_id into every event dict
+    - `structlog.stdlib.add_log_level` — adds `level` field
+    - `structlog.processors.TimeStamper(fmt="iso")` — ISO-8601 timestamp
+    - `structlog.processors.StackInfoRenderer()` — stack_info support
+    - `structlog.processors.ExceptionRenderer()` — exc_info → `"exception"` key in JSON
+    - `structlog.processors.JSONRenderer()` — final JSON output
+  - `get_logger(name=None) -> structlog.stdlib.BoundLogger` — typed logger factory
+  - Event naming convention (hybrid dotted namespace): `{domain}.{component}.{action}_{state}`
+    - Examples: `user.registration_started`, `database.connection_initialized`, `task.processing_failed`
+    - States: `_started`, `_completed`, `_failed`, `_validated`, `_rejected`
+- Created `app/main.py` — usage demo with `simulate_registration`, `simulate_db_init`, `simulate_failure`
+- Created `app/core/tests/test_logging.py` — 9 tests (TDD: tests written first)
+- Updated `pyproject.toml`:
+  - ruff per-file-ignores: added `"app/**/tests/**/*.py" = ["S101", "ANN"]`
+  - mypy overrides: added `[[tool.mypy.overrides]]` for `app.core.tests.*`
+  - pytest testpaths: `["tests", "app"]`
+- Gotchas:
+  - `add_logger_name` processor requires a stdlib logger — incompatible with `PrintLoggerFactory` (no `.name` attr); remove it
+  - `PrintLoggerFactory(file=sys.stdout)` required for pytest `capsys` capture
+  - `cache_logger_on_first_use=False` required when `setup_logging()` is called multiple times in tests
+  - `cast(BoundLogger, ...)` was redundant — mypy infers `proxy.bind()` already returns `BoundLogger`
+  - ContextVar state bleeds between tests — add autouse fixture: `token = request_id_var.set(""); yield; request_id_var.reset(token)`
+- Run demo: `uv run python -m app.main`
+- 33 total tests passing (24 root + 9 logging); ruff, mypy, pyright all clean
+
+### 12. Move External Docs into `.claude/`
+- Moved `external_docs/` → `.claude/external_docs/` to co-locate reference docs with Claude config
+- Files moved:
+  - `.claude/external_docs/ai-coding-project-setup-guide.md`
+  - `.claude/external_docs/vertical-slice-architecture-setup-guide.md`
+- Updated MEMORY.md to reflect new paths
+
+### 13. Add Docker Setup with uv Multi-Stage Build
+- Reference: `https://docs.astral.sh/uv/guides/integration/docker/`
+- Created `Dockerfile` (multi-stage):
+  - Builder: `python:3.12-slim-bookworm` + uv binary copied from `ghcr.io/astral-sh/uv:latest` distroless image
+  - `UV_COMPILE_BYTECODE=1` — bytecode compilation for faster startup
+  - `UV_LINK_MODE=copy` — required for cache mounts across separate filesystems
+  - Deps installed in a separate cached layer (`--no-install-project --no-dev`) before copying source
+  - Runtime: clean `python:3.12-slim-bookworm` with only `.venv` + `app/` copied from builder
+  - No uv, no build tools in the final image
+- Created `.dockerignore`:
+  - Excludes `.venv`, bytecode, `.mypy_cache`, `.ruff_cache`, `.pytest_cache`, `.pyright`
+  - Excludes `.git`, `.env`, `.firecrawl`, `.claude`, `docs/`, `dist/`
+- Created `docker-compose.yml`:
+  - Port `8123:8123`, `.env` support (optional), `PYTHONUNBUFFERED=1`
+  - Bind mount `.:/app` for live code changes; anonymous `/app/.venv` to preserve container's packages
+- Build: `docker build -t aa-live-aitemplate-build .`
+- Image size: 213MB (base slim + structlog only)
+- Container runs and produces structured JSON logs as expected
+- Gotcha: `--no-editable` requires a `[build-system]` in pyproject.toml to build a wheel; omitted since project has none — re-enable when FastAPI/hatchling is added
+
 ## TODO
-- Review `external_docs/ai-coding-project-setup-guide.md` — check if anything else needs to be added to config
+## Personal TODO
+- something to include later, first do PRD, then finalize the architecture and tech stack and then setup the project template
+- When finalize the template - ask AI, what tools I can / should use, the external documentation for it and then create the "prompt" to setup the tool/framework, 

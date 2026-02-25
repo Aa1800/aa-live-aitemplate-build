@@ -1,0 +1,15 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8123:8123"
+    volumes:
+      # Mount project source for live code changes in development
+      - .:/app
+      # Exclude .venv so the container uses its own installed packages
+      - /app/.venv
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - PYTHONUNBUFFERED=1
