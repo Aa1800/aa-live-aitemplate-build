@@ -217,6 +217,23 @@ https://github.com/dynamous-community/agentic-coding-course/blob/main/module_5/w
   11. Shared Utilities & Patterns
 - File paths in prompts updated to use `.claude/external-docs/` (user-adjusted from `.agents/external-docs/`)
 
+### 17. Full Project Validation
+- Ran comprehensive validation: tests, type checking, linting, local server, Docker
+- **Tests:** 48/48 passed, 92% coverage
+- **mypy:** clean (12 source files)
+- **pyright:** 0 errors, 0 warnings, 0 informations
+- **ruff:** all checks passed
+- **Local server:** `GET /`, `GET /docs` both 200; `x-request-id` header present
+- **Docker:** build successful, container healthy, endpoints 200, structured JSON logs confirmed
+- **Bug fixed:** `app/main.py:51` — `host="127.0.0.1"` → `host="0.0.0.0"` (container was unreachable from host)
+
+### 16. Audit Ignore Comments
+- Scanned all `*.py` files for `# noqa` and `# type: ignore` suppressions
+- Found 2 comments, both in `app/core/config.py:37-38` (`# noqa: ANN401`)
+- Both suppress `ANN401` on `decode_complex_value` — an override of `pydantic-settings`' `EnvSettingsSource`, which itself uses `Any` in its signature; no valid alternative exists
+- Created `.claude/reports/ignore-comments-report-2026-02-27.md` with analysis and recommendation
+- **Verdict:** Keep both — suppressions are correctly scoped and justified by library override contract
+
 ## TODO
 ## Personal TODO
 - something to include later, first do PRD, then finalize the architecture and tech stack and then setup the project template

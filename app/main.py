@@ -48,4 +48,4 @@ def root() -> dict[str, str]:
 
 
 if __name__ == "__main__":
-    uvicorn.run("app.main:app", host="127.0.0.1", port=8123, reload=True)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8123, reload=True)  # noqa: S104
