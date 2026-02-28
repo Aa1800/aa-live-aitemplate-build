@@ -30,8 +30,16 @@ class ValidationError(DatabaseError):
     """Raised when input validation fails before a database operation."""
 
 
+_STATUS_MAP: dict[type[Exception], int] = {
+    NotFoundError: 404,
+    ValidationError: 422,
+    DatabaseError: 500,
+}
+
+
 async def database_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Return a structured JSON error response for database exceptions."""
+    status_code = _STATUS_MAP.get(type(exc), 500)
     logger.error(
         "database.error",
         error=str(exc),
@@ -40,7 +48,7 @@ async def database_exception_handler(request: Request, exc: Exception) -> JSONRe
         exc_info=True,
     )
     return JSONResponse(
-        status_code=500,
+        status_code=status_code,
         content={"error": str(exc), "type": type(exc).__name__},
     )
 

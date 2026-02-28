@@ -47,6 +47,17 @@ async def test_exception_handler_returns_json_with_error_and_type() -> None:
     assert response.status_code == 500
 
 
+async def test_not_found_error_returns_404() -> None:
+    request = MagicMock(spec=Request)
+    request.url.path = "/test"
+    exc = NotFoundError("user not found")
+
+    with patch("app.core.exceptions.logger"):
+        response = await database_exception_handler(request, exc)
+
+    assert response.status_code == 404
+
+
 async def test_exception_handler_logs_with_exc_info() -> None:
     request = MagicMock(spec=Request)
     request.url.path = "/test"

@@ -32,9 +32,9 @@ async def health_db(db: AsyncSession = Depends(get_db)) -> dict[str, str]:  # no
     """Confirm the database connection is available."""
     try:
         await db.execute(text("SELECT 1"))
-    except Exception:
+    except Exception as exc:
         logger.error("database.health_check_failed", exc_info=True)
-        raise HTTPException(status_code=503, detail="Database unavailable") from None
+        raise HTTPException(status_code=503, detail="Database unavailable") from exc
     return {"status": "healthy", "service": "database", "provider": "postgresql"}
 
 
@@ -46,9 +46,9 @@ async def health_ready(
     """Confirm all dependencies are ready for traffic."""
     try:
         await db.execute(text("SELECT 1"))
-    except Exception:
+    except Exception as exc:
         logger.error("database.health_check_failed", exc_info=True)
-        raise HTTPException(status_code=503, detail="Database not ready") from None
+        raise HTTPException(status_code=503, detail="Database not ready") from exc
     return {
         "status": "ready",
         "environment": settings.environment,
