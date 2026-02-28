@@ -226,6 +226,7 @@ https://github.com/dynamous-community/agentic-coding-course/blob/main/module_5/w
 - **Local server:** `GET /`, `GET /docs` both 200; `x-request-id` header present
 - **Docker:** build successful, container healthy, endpoints 200, structured JSON logs confirmed
 - **Bug fixed:** `app/main.py:51` — `host="127.0.0.1"` → `host="0.0.0.0"` (container was unreachable from host)
+- Added `# noqa: S104` on that line — ruff flags `0.0.0.0` as S104 (binding to all interfaces); intentional for Docker `__main__` entrypoint
 
 ### 16. Audit Ignore Comments
 - Scanned all `*.py` files for `# noqa` and `# type: ignore` suppressions
