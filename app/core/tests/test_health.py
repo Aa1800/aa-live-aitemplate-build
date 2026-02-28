@@ -13,7 +13,7 @@ from app.main import app
 
 
 @pytest.fixture
-def mock_db(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
+def mock_db(monkeypatch: pytest.MonkeyPatch):
     """Override get_db dependency with a mock AsyncSession."""
     session = AsyncMock(spec=AsyncSession)
 
