@@ -280,6 +280,31 @@ https://github.com/dynamous-community/agentic-coding-course/blob/main/module_5/w
   - Alembic migrations: `uv run alembic upgrade head`
   - Docker: `/Applications/Docker.app/Contents/Resources/bin/docker compose up -d`
 
+### 19. Shared Infrastructure for Cross-Feature Utilities
+- Reference: `.claude/external_docs/vertical-slice-architecture-setup-guide.md`
+- TDD workflow: tests written first (RED), watched fail, then implemented (GREEN)
+
+**New files:**
+- `app/shared/__init__.py` — package marker
+- `app/shared/models.py` — `TimestampMixin` with `created_at`/`updated_at` via `@declared_attr`; all future models inherit this
+- `app/shared/schemas.py` — `PaginationParams` (page/page_size/offset), `PaginatedResponse[T]` (generic, total_pages computed), `ErrorResponse`
+- `app/shared/utils.py` — `utcnow()` (timezone-aware), `format_iso(dt)` (ISO 8601)
+- `app/shared/tests/__init__.py` — package marker
+- `app/shared/tests/test_models.py` — 3 tests (column presence, DateTime type)
+- `app/shared/tests/test_schemas.py` — 8 tests (defaults, validation, offset, total_pages, ErrorResponse)
+- `app/shared/tests/test_utils.py` — 2 tests (timezone-aware, ISO format)
+
+**Gotchas:**
+- `UP046` (Generic[T] → type params) suppressed with `# noqa: UP046` on `PaginatedResponse` — pydantic's documented Generic pattern; PEP 695 syntax untested with pydantic
+- `N805` suppressed on `@declared_attr` methods — `cls` is correct convention for SQLAlchemy mixins
+- `DeclarativeBase` was accidentally imported in models.py — removed (unused)
+
+**Results:**
+- **Tests:** 13 new tests; 78 unit + 3 integration all passing
+- **Coverage:** 93% overall
+- **Tools:** ruff, mypy, pyright all clean
+- **Commit:** `80c4813 feat: add shared infrastructure for cross-feature utilities`
+
 ## TODO
 ## Personal TODO
 - something to include later, first do PRD, then finalize the architecture and tech stack and then setup the project template
