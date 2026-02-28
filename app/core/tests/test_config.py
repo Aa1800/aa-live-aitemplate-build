@@ -23,7 +23,10 @@ def test_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_settings_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("APP_NAME", "Test App")
     monkeypatch.setenv("ENVIRONMENT", "production")
-    settings = Settings()  # type: ignore[call-arg]
+    monkeypatch.setenv(
+        "DATABASE_URL", "postgresql+asyncpg://user:pass@localhost/testdb"
+    )
+    settings = Settings(_env_file=None)  # type: ignore[call-arg]
     assert settings.app_name == "Test App"
     assert settings.environment == "production"
 
@@ -39,8 +42,11 @@ def test_get_settings_is_cached() -> None:
     assert s1 is s2
 
 
-def test_allowed_origins_default() -> None:
-    settings = Settings()  # type: ignore[call-arg]
+def test_allowed_origins_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(
+        "DATABASE_URL", "postgresql+asyncpg://user:pass@localhost/testdb"
+    )
+    settings = Settings(_env_file=None)  # type: ignore[call-arg]
     assert "http://localhost:3000" in settings.allowed_origins
     assert "http://localhost:8123" in settings.allowed_origins
 
@@ -49,7 +55,10 @@ def test_allowed_origins_parsed_from_comma_string(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("ALLOWED_ORIGINS", "http://example.com,http://other.com")
-    settings = Settings()  # type: ignore[call-arg]
+    monkeypatch.setenv(
+        "DATABASE_URL", "postgresql+asyncpg://user:pass@localhost/testdb"
+    )
+    settings = Settings(_env_file=None)  # type: ignore[call-arg]
     assert settings.allowed_origins == ["http://example.com", "http://other.com"]
 
 
