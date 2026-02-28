@@ -539,7 +539,7 @@ Let's use AI to set this up. We write a prompt like this:
 Using the vertical slice architecture guide as context, set up FastAPI with Pydantic for our project.
 
 Context articles to read:
-1. .agents/external-docs/vertical-slice-architecture-setup-guide.md
+1. .claude/external-docs/vertical-slice-architecture-setup-guide.md
    Read the article to understand infrastructure patterns.
 
 2. FastAPI best practices: FETCH:(https://fastapi.tiangolo.com/advanced/events/)

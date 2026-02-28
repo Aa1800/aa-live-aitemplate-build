@@ -8,6 +8,8 @@ INSTRUCTIONS FOR CLAUDE (read at the start of every session):
 - When a TODO item is completed, move it from the TODO section into Steps Completed.
 - Keep entries concise: what was done, why, and the exact commands used.
 - Ask the user "Should I update summary.md?" before closing out any session.
+
+https://github.com/dynamous-community/agentic-coding-course/tree/main/module_5/workshop_ai_optimized_codebase/live_template_build
 -->
 
 ##For reference
@@ -199,7 +201,26 @@ https://github.com/dynamous-community/agentic-coding-course/blob/main/module_5/w
 - 48 total tests passing (24 root + 9 logging + 6 config + 5 middleware + 4 main); ruff, mypy, pyright all clean
 - Coverage: 92% overall
 
+### 15. Extract Setup Prompts to setup-prompts.md
+- Read `.claude/external_docs/ai-coding-project-setup-guide.md` and extracted all 11 prompts
+- Created `setup-prompts.md` in project root with each prompt under a numbered heading, in run order:
+  1. Ruff Setup
+  2. MyPy Setup
+  3. Pyright Setup
+  4. Pytest Setup
+  5. Structured Logging Setup
+  6. Docker Setup
+  7. FastAPI + Configuration + Middleware
+  8. Check Ignore Comments
+  9. Validate (full project health check)
+  10. Database Infrastructure (PostgreSQL + Health Checks + Alembic)
+  11. Shared Utilities & Patterns
+- File paths in prompts updated to use `.claude/external-docs/` (user-adjusted from `.agents/external-docs/`)
+
 ## TODO
 ## Personal TODO
 - something to include later, first do PRD, then finalize the architecture and tech stack and then setup the project template
 - When finalize the template - ask AI, what tools I can / should use, the external documentation for it and then create the "prompt" to setup the tool/framework, 
+- Review all the prompts and see any improvemnet are needed on the specific prompts.
+- Also review the /create-prompt command and see if that needs to be reviewed
+- Also checkout the create-skill skill to create these commands/skills
