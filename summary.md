@@ -235,6 +235,51 @@ https://github.com/dynamous-community/agentic-coding-course/blob/main/module_5/w
 - Created `.claude/reports/ignore-comments-report-2026-02-27.md` with analysis and recommendation
 - **Verdict:** Keep both — suppressions are correctly scoped and justified by library override contract
 
+### 18. PostgreSQL Database Infrastructure
+- Reference: `.claude/external_docs/vertical-slice-architecture-setup-guide.md`
+- Installed: `sqlalchemy[asyncio]`, `asyncpg`, `alembic` (prod)
+- **Design doc:** `docs/plans/2026-02-27-database-infrastructure-design.md`
+- **Implementation plan:** `docs/plans/2026-02-27-database-infrastructure.md`
+- **Execution:** subagent-driven development (11 tasks, fresh subagent per task, two-stage review each)
+
+**New files:**
+- `app/core/database.py` — async engine (`pool_pre_ping=True`, `pool_size=5`, `max_overflow=10`, `echo` by env), `AsyncSessionLocal`, `Base(DeclarativeBase)`, `get_db()` dependency
+- `app/core/exceptions.py` — `DatabaseError`/`NotFoundError`/`ValidationError` hierarchy; `database_exception_handler` with `_STATUS_MAP` dispatch (`NotFoundError→404`, `ValidationError→422`, `DatabaseError→500`); `setup_exception_handlers(app)`
+- `app/core/health.py` — `APIRouter` (no prefix) with `GET /health`, `GET /health/db`, `GET /health/ready`; `# noqa: B008` on `Depends()` lines; `raise HTTPException(...) from exc` (preserves exception chain)
+- `alembic/env.py` — async-native: `create_async_engine`, `run_sync(do_run_migrations)`, URL from `settings.database_url`
+- `app/tests/conftest.py` — `test_db_engine` + `test_db_session` fixtures for integration tests
+- `app/core/tests/test_database.py` — 5 unit tests (engine, Base, get_db generator)
+- `app/core/tests/test_exceptions.py` — 6 unit tests (hierarchy, handler JSON, status codes, exc_info)
+- `app/core/tests/test_health.py` — 5 unit tests (full app + `dependency_overrides` fixture)
+- `app/tests/test_database_integration.py` — 3 integration tests (`@pytest.mark.integration`)
+
+**Updated files:**
+- `app/core/config.py` — `database_url: str` (required, no default)
+- `app/core/tests/test_config.py` — all `Settings()` calls isolated with `_env_file=None` + monkeypatch (CI-safe)
+- `app/main.py` — imports engine/health_router/setup_exception_handlers; lifespan logs `database.connection.initialized/closed`; calls `await engine.dispose()` on shutdown
+- `docker-compose.yml` — `db` service: `postgres:18-alpine`, port `5433:5432`, `pg_isready` health check, `postgres_data` named volume; `app` service: `depends_on: db: condition: service_healthy`, `DATABASE_URL` override for Docker networking
+- `pyproject.toml` — `integration` pytest marker; alembic excluded from mypy/pyright; ruff per-file-ignores for `alembic/**/*.py`
+- `.env.example` — database section with Docker, local, Supabase, Neon, Railway examples (all using `ssl=require`, not `sslmode`)
+- `.env` — created (gitignored): `DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db`
+
+**Gotchas caught during implementation:**
+- `patch.object(instance, "__call__", ...)` doesn't work for dunder methods — patch the module-level name instead: `patch.object(db_module, "AsyncSessionLocal", ...)`
+- `asyncpg` uses `?ssl=require` not `?sslmode=require` (psycopg2 convention)
+- `async with AsyncSessionLocal() as session` already calls `close()` — no `finally: session.close()` needed
+- `mock_db` fixture uses `yield` — annotate as `Generator[..., None, None]` or just drop the annotation (ANN suppressed in test files)
+- `NotFoundError` needs HTTP 404 not 500 — use `_STATUS_MAP` dispatch in exception handler
+- `raise HTTPException(...) from None` discards exception chain — use `from exc` instead
+
+**Results:**
+- **Tests:** 65 unit tests + 3 integration tests passing; `pytest -m "not integration"` deselects DB tests
+- **Coverage:** 92% overall
+- **Tools:** ruff, mypy, pyright all clean
+- **Commands:**
+  - Unit tests: `uv run pytest -v -m "not integration"`
+  - Integration tests (needs Docker): `uv run pytest -v -m integration`
+  - Alembic migrations: `uv run alembic upgrade head`
+  - Docker: `/Applications/Docker.app/Contents/Resources/bin/docker compose up -d`
+
 ## TODO
 ## Personal TODO
 - something to include later, first do PRD, then finalize the architecture and tech stack and then setup the project template
