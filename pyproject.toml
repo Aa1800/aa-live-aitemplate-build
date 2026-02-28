@@ -5,9 +5,12 @@ description = "FastAPI + PostgreSQL starter with vertical slice architecture, op
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "alembic>=1.18.4",
+    "asyncpg>=0.31.0",
     "fastapi>=0.133.0",
     "pydantic-settings>=2.13.1",
     "python-dotenv>=1.2.1",
+    "sqlalchemy[asyncio]>=2.0.47",
     "structlog>=25.5.0",
     "uvicorn[standard]>=0.41.0",
 ]
@@ -55,9 +58,11 @@ known-first-party = ["app"]
 "tests/**/*.py" = ["S101", "ANN"]
 "app/**/tests/**/*.py" = ["S101", "ANN"]
 "__init__.py" = ["F401"]
+"alembic/**/*.py" = ["ANN", "N", "UP", "E402"]
 
 [tool.mypy]
 python_version = "3.12"
+exclude = ["alembic/"]
 
 # --- Strictness ---
 # Enables all optional error checking flags (see `mypy --help` for full list).
@@ -113,7 +118,7 @@ disallow_incomplete_defs = false
 [tool.pyright]
 # Scan the project root (update to ["app"] or ["src"] when source layout is adopted)
 include = ["."]
-exclude = ["**/__pycache__", ".venv", ".mypy_cache", ".firecrawl"]
+exclude = ["**/__pycache__", ".venv", ".mypy_cache", ".firecrawl", "alembic"]
 
 pythonVersion = "3.12"
 pythonPlatform = "Darwin"
@@ -163,6 +168,9 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 asyncio_default_test_loop_scope = "function"
 addopts = "--tb=short -v --cov --cov-report=term-missing"
+markers = [
+    "integration: marks tests requiring real database (deselect with '-m \"not integration\"')",
+]
 
 [tool.coverage.run]
 source = ["."]
