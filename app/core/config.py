@@ -66,6 +66,9 @@ class Settings(BaseSettings):
         "http://localhost:8123",
     ]
 
+    # Database
+    database_url: str
+
     @classmethod
     def settings_customise_sources(
         cls,
@@ -86,4 +89,4 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     """Return the cached Settings singleton."""
-    return Settings()
+    return Settings()  # type: ignore[call-arg]

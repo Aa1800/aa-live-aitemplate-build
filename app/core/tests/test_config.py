@@ -7,8 +7,12 @@ import pytest
 from app.core.config import Settings, get_settings
 
 
-def test_settings_defaults() -> None:
-    settings = Settings()
+def test_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Provide the required field and bypass the .env file so field defaults are visible.
+    monkeypatch.setenv(
+        "DATABASE_URL", "postgresql+asyncpg://user:pass@localhost/testdb"
+    )
+    settings = Settings(_env_file=None)  # type: ignore[call-arg]
     assert settings.app_name == "Obsidian Agent Project"
     assert settings.version == "0.1.0"
     assert settings.environment == "development"
@@ -19,7 +23,7 @@ def test_settings_defaults() -> None:
 def test_settings_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("APP_NAME", "Test App")
     monkeypatch.setenv("ENVIRONMENT", "production")
-    settings = Settings()
+    settings = Settings()  # type: ignore[call-arg]
     assert settings.app_name == "Test App"
     assert settings.environment == "production"
 
@@ -36,7 +40,7 @@ def test_get_settings_is_cached() -> None:
 
 
 def test_allowed_origins_default() -> None:
-    settings = Settings()
+    settings = Settings()  # type: ignore[call-arg]
     assert "http://localhost:3000" in settings.allowed_origins
     assert "http://localhost:8123" in settings.allowed_origins
 
@@ -45,5 +49,15 @@ def test_allowed_origins_parsed_from_comma_string(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("ALLOWED_ORIGINS", "http://example.com,http://other.com")
-    settings = Settings()
+    settings = Settings()  # type: ignore[call-arg]
     assert settings.allowed_origins == ["http://example.com", "http://other.com"]
+
+
+def test_database_url_is_read_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(
+        "DATABASE_URL", "postgresql+asyncpg://user:pass@localhost/testdb"
+    )
+    get_settings.cache_clear()
+    settings = get_settings()
+    assert settings.database_url == "postgresql+asyncpg://user:pass@localhost/testdb"
+    get_settings.cache_clear()
