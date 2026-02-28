@@ -305,6 +305,134 @@ https://github.com/dynamous-community/agentic-coding-course/blob/main/module_5/w
 - **Tools:** ruff, mypy, pyright all clean
 - **Commit:** `80c4813 feat: add shared infrastructure for cross-feature utilities`
 
+### 20. Diff Against `fastapi-starter-for-ai-coding`
+- Ran `diff -rq` between `/Users/jsr/Workspace/Dynamous/fastapi-starter-for-ai-coding` and current project
+- Excluded: `*.pyc`, `__pycache__`, `.venv`, `.git`, `.env`, `*.lock`, `.mypy_cache`, `.ruff_cache`, `.pytest_cache`, `.pyright`, `htmlcov`, `.coverage`
+
+**Only in `fastapi-starter` (reference has, current project lacks):**
+- `.claude/commands/check-ingore-comments.md` — custom slash command for ignore comment audit
+- `.claude/commands/validate.md` — custom slash command for full project validation
+- `alembic/versions/e4a05b88d90b_initial.py` — a committed initial migration file
+- `app/shared/tests/conftest.py` — shared test conftest (not present here)
+- `docs/logging-standard.md` — structlog standards doc
+- `docs/mypy-standard.md` — mypy standards doc
+- `docs/pyright-standard.md` — pyright standards doc
+- `docs/pytest-standard.md` — pytest standards doc
+- `docs/ruff-standard.md` — ruff standards doc
+
+**Only in current project (current has, `fastapi-starter` lacks):**
+- `.claude/commands/create-prompt.md` — create-prompt slash command
+- `.claude/external_docs/` — reference guides (ai-coding guide, vertical slice guide)
+- `.claude/reports/` — ignore comment audit report
+- `.claude/settings.local.json` — local Claude settings
+- `.firecrawl/` — firecrawl cache
+- `docs/plans/` — design and implementation plan docs
+- `main.py` — root-level type-checking demo file
+- `setup-prompts.md`, `summary.md`, `notestodo.md`, `steps and notes.md` — session scaffolding
+- `tests/` — root-level test suite
+
+**Files present in both but with content differences:**
+- All `app/core/` source and test files
+- All `app/shared/` source and test files
+- `app/main.py`, `app/tests/conftest.py`, `app/tests/test_*.py`
+- `pyproject.toml`, `Dockerfile`, `docker-compose.yml`, `alembic/env.py`, `alembic.ini`
+- `.dockerignore`, `.env.example`, `.gitignore`, `CLAUDE.md`, `README.md`
+- `.claude/commands/commit.md`
+
+**Summary:** `fastapi-starter` is a cleaner reference template — it has standards docs, a committed initial Alembic migration, and a shared test conftest. Current project has more session scaffolding (summary, setup-prompts, plans) and external docs that wouldn't belong in a published template.
+
+### 21. Deep Diff Against `fastapi-starter-for-ai-coding`
+- Ran `diff -r` between `/Users/jsr/Workspace/Dynamous/fastapi-starter-for-ai-coding` (reference) and current project
+- Findings grouped by file below. `<` = reference only, `>` = current only
+
+#### `pyproject.toml`
+- **Versions:** Reference has older pins (fastapi 0.120, pytest 8.4, ruff 0.14); current is newer
+- **Ruff line-length:** Reference 100; current 88
+- **Ruff rules:** Reference adds `DTZ`, `ARG`, `PTH`; current adds `N`, `A`, `SIM`; current adds `fixable = ["ALL"]`
+- **Ruff per-file-ignores:** Reference suppresses `B008` globally for `health.py`; current uses inline `# noqa: B008`; current adds `alembic/**` group
+- **Mypy:** Reference omits `warn_unreachable`, `strict_bytes`, AI output flags; current has all of these
+- **Pyright:** Reference is minimal strict; current adds `strictListInference/DictionaryInference/SetInference`, `disableBytesTypePromotions`, opt-in rules (`reportImportCycles`, `reportUnreachable`, etc.)
+- **Pytest:** Reference has no `addopts` (no auto coverage); current has `--tb=short -v --cov --cov-report=term-missing` + `[tool.coverage.*]` sections
+- **Mypy overrides:** Reference targets `*.tests.*` / `test_*`; current is more specific (`tests.*`, `app.core.tests.*`, `app.tests.*`)
+
+#### `Dockerfile`
+- **Builder base:** Reference uses `ghcr.io/astral-sh/uv:python3.12-bookworm-slim` (uv image with Python); current uses `python:3.12-slim-bookworm` + copies uv binary from distroless
+- **Dep install:** Reference does `COPY` then install; current uses `--mount=type=bind` (better layer caching, no copy needed)
+- **Project install:** Reference uses `--no-editable`; current omits
+- **Runtime COPY:** Reference copies entire `.`; current copies only `/app/app` (tighter image)
+
+#### `docker-compose.yml`
+- **app service:** Reference adds `restart: unless-stopped`; current omits
+- **build shorthand:** Reference uses full `build: context/dockerfile` block; current uses `build: .`
+- **Volume syntax:** Reference `postgres_data:` (bare); current `postgres_data: {}` (explicit)
+- **Reference has extensive commented-out dev patterns** (watch mode, health check template); current is lean
+
+#### `alembic/env.py`
+- **Engine creation:** Reference uses `async_engine_from_config()` (reads from ini); current uses `create_async_engine(_settings.database_url)` directly — simpler
+- **Settings variable:** Reference uses `settings`; current uses `_settings` (private convention)
+
+#### `CLAUDE.md`
+- **Major difference:** Reference is a full developer handbook — KISS/YAGNI principles, vertical slice structure, DB patterns, logging taxonomy, docstring standards, agent tool docstring guidelines, feature creation workflow
+- **Current:** Minimal — just commands and project structure
+
+#### `app/main.py`
+- **lifespan type:** Reference `AsyncIterator[None]`; current `AsyncGenerator[None, None]`
+- **Log events:** Reference `application.lifecycle_started/stopped`, `database.connection_initialized`; current `application.startup/shutdown`, `database.connection.initialized/closed`
+- **Root endpoint name:** Reference `read_root()`; current `root()`
+
+#### `app/core/config.py`
+- **`_CommaFallbackEnvSource`:** Present in current; **absent in reference** — reference relies on pydantic-settings JSON parsing only for list fields
+- **`extra="ignore"`:** Reference has it; current omits
+
+#### `app/core/database.py`
+- **Session factory:** Reference explicitly sets `class_=AsyncSession`, `autocommit=False`, `autoflush=False`; current uses defaults
+- **`get_db()`:** Reference wraps in `try/finally: await session.close()`; current omits (context manager handles it)
+
+#### `app/core/exceptions.py`
+- **`_STATUS_MAP`:** Present in current for type-exact dispatch; **absent in reference** — reference uses `isinstance` chain
+- **Handler registration:** Reference registers all 3 types with `cast(Any, handler)`; current registers only `DatabaseError` (subtypes matched via `_STATUS_MAP`)
+- **Logger fields:** Reference uses `extra={"error_type": ..., "error_message": ...}`; current uses flat kwargs
+
+#### `app/core/health.py`
+- **Function names:** Reference `health_check` / `database_health_check` / `readiness_check`; current `health` / `health_db` / `health_ready`
+- **`health_ready`:** Reference injects settings via local call; current injects as `Depends(get_settings)`
+- **Status codes:** Reference uses `status.HTTP_503_SERVICE_UNAVAILABLE`; current uses bare `503`
+
+#### `app/core/logging.py`
+- **`set_request_id`:** Reference `if not request_id:`; current `if request_id is not None:` (more precise — allows empty string)
+- **`wrapper_class`:** Reference `make_filtering_bound_logger(level_int)`; current `structlog.stdlib.BoundLogger`
+- **`cache_logger_on_first_use`:** Reference `True`; current `False` (required for test isolation)
+- **Processors:** Reference includes `merge_contextvars`, `format_exc_info`; current uses `ExceptionRenderer()` instead
+- **`get_logger` return type:** Reference `WrappedLogger`; current typed `structlog.stdlib.BoundLogger` (via `.bind()`)
+
+#### `app/core/middleware.py`
+- **Timing:** Reference `time.time()`; current `time.perf_counter()` (higher precision)
+- **Log event names:** Reference `request.http_received/completed/failed`; current `request.started/completed/failed`
+- **`call_next` type:** Reference `Callable[[Request], Awaitable[Response]]`; current `RequestResponseEndpoint`
+- **pyright ignores:** Reference has `# pyright: ignore` on two lines; current is clean
+
+#### `app/shared/models.py`
+- **Decorator:** Reference `@declared_attr.directive`; current `@declared_attr`
+- **Column type:** Reference `DateTime(timezone=True)`; current `sa.DateTime` (no tz param)
+- **`utcnow` location:** Reference defines inline in models.py; current imports from `app.shared.utils`
+- **MRO order:** Reference `(Base, TimestampMixin)`; current `(TimestampMixin, Base)`
+
+#### `app/shared/schemas.py`
+- **Generic syntax:** Reference uses PEP 695 `class PaginatedResponse[T](BaseModel):`; current uses `Generic[T]` + `# noqa: UP046`
+- **`total_pages` edge case:** Reference returns `0` when `total == 0`; current returns `0` when `page_size == 0`
+
+#### `app/shared/utils.py`
+- Functionally identical — reference adds Google-style docstrings with examples; current has no docstrings
+
+#### `app/tests/conftest.py`
+- **Engine config:** Reference adds `pool_pre_ping`, `pool_size`, `max_overflow`; current is minimal
+- **Session factory:** Reference passes `class_=AsyncSession`, `autocommit`, `autoflush`; current uses just `expire_on_commit=False`
+- **Rollback:** Current adds `await session.rollback()` after yield; reference omits
+
+#### `app/shared/tests/test_models.py`
+- **Reference has 4 integration tests** (live DB): timestamps set on creation, `updated_at` changes on update, timezone-aware — using actual DB writes
+- **Current has 3 unit tests** (no DB): column presence and DateTime type — using SQLAlchemy mapper introspection only
+
 ## TODO
 ## Personal TODO
 - something to include later, first do PRD, then finalize the architecture and tech stack and then setup the project template
