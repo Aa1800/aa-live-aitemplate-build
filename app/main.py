@@ -12,6 +12,9 @@ import uvicorn
 from fastapi import FastAPI
 
 from app.core.config import get_settings
+from app.core.database import engine
+from app.core.exceptions import setup_exception_handlers
+from app.core.health import router as health_router
 from app.core.logging import get_logger, setup_logging
 from app.core.middleware import setup_middleware
 
@@ -24,7 +27,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     setup_logging(log_level=settings.log_level)
     logger = get_logger("app.main")
     logger.info("application.startup", environment=settings.environment)
+    logger.info("database.connection.initialized")
     yield
+    await engine.dispose()
+    logger.info("database.connection.closed")
     logger.info("application.shutdown")
 
 
@@ -35,6 +41,8 @@ app = FastAPI(
 )
 
 setup_middleware(app)
+setup_exception_handlers(app)
+app.include_router(health_router)
 
 
 @app.get("/")
